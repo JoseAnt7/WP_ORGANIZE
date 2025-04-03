@@ -76,21 +76,30 @@ def init_routes(app, db, bcrypt):
 
         for carpeta in carpetas:
             ruta_completa = os.path.join(ruta_base, carpeta)
-            comando = ["php", "wp-cli.phar", f"--path={ruta_completa}", "plugin", "list", "--format=csv", "--fields=name,status"]
+            # Ajustamos el comando para incluir todos los campos necesarios
+            comando = [
+                "php", 
+                "wp-cli.phar", 
+                f"--path={ruta_completa}", 
+                "plugin", 
+                "list", 
+                "--format=csv", 
+                "--fields=name,status,version,update_version,update"
+            ]
             
             try:
                 resultado = subprocess.run(comando, capture_output=True, text=True, check=True)
                 lines = resultado.stdout.strip().split("\n")[1:]  # Saltar encabezado
                 for line in lines:
-                    name, status = line.split(",")
-                    # Simulación de versión y actualización (ajusta según datos reales)
+                    # Dividimos la línea CSV en los campos correspondientes
+                    name, status, version, update_version, update = line.strip().split(",")
                     plugins_data.append({
                         "site": carpeta,
                         "name": name,
                         "status": status,
-                        "version": "1.0.0",  # Placeholder, obtén esto si WP-CLI lo soporta
-                        "latestVersion": "1.1.0",  # Placeholder
-                        "needsUpdate": True if "1.0.0" < "1.1.0" else False  # Lógica simulada
+                        "version": version if version else "N/A",  # Si no hay versión, usamos "N/A"
+                        "latestVersion": update_version if update_version else "N/A",  # Última versión disponible
+                        "needsUpdate": update == "available"  # True si hay actualización disponible
                     })
             except subprocess.CalledProcessError as e:
                 print(f"Error en {carpeta}: {e.stderr}")
