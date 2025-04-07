@@ -7,8 +7,9 @@ const getState = ({ getStore, getActions, setStore }) => {
     store: {
       token: null,
       user: null,
-      plugins: [], // Añadimos plugins al store para almacenar la lista
-      sites: [],   // Añadimos sites al store para los filtros
+      plugins: [],
+      sites: [],
+      apiPlugins: [], // Añadimos apiPlugins al store
       error: null,
       message: null
     },
@@ -60,18 +61,13 @@ const getState = ({ getStore, getActions, setStore }) => {
           return false;
         }
       },
-      // Nueva acción para obtener los plugins
       fetchPlugins: async () => {
         try {
           const response = await axios.get(`${import.meta.env.VITE_API_URL}/plugins`, {
             headers: { 'Content-Type': 'application/json' },
           });
-          const pluginsData = response.data; // Array de objetos con site, name, status, etc.
-          
-          // Extraer sitios únicos para el filtro
+          const pluginsData = response.data;
           const uniqueSites = [...new Set(pluginsData.map(item => item.site))];
-          
-          // Actualizar el store con los datos
           setStore({
             plugins: pluginsData,
             sites: uniqueSites,
@@ -85,6 +81,22 @@ const getState = ({ getStore, getActions, setStore }) => {
           } else {
             setStore({ error: 'Error inesperado' });
           }
+        }
+      },
+      fetchApiPlugins: async () => {
+        try {
+          const response = await axios.get(`${import.meta.env.VITE_API_URL}/plugins/api`, {
+            headers: { 'Content-Type': 'application/json' },
+          });
+          const pluginsData = response.data;
+          console.log("Datos de apiPlugins:", pluginsData); // Para depuración
+          setStore({
+            apiPlugins: pluginsData,
+            error: null
+          });
+        } catch (error) {
+          console.error("Error en fetchApiPlugins:", error);
+          setStore({ error: error.response?.data?.error || 'Error al cargar plugins desde API' });
         }
       }
     },

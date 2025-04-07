@@ -11,3 +11,11 @@ class User(UserMixin, db.Model):
 
     def __repr__(self):
         return f'<User {self.username}>'
+    
+class Wordpress_sites(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    wp_url = db.Column(db.String, unique=True, nullable=False)
+    username = db.Column(db.String, unique=True, nullable=False)
+    app_password = db.Column(db.String, unique=True, nullable=False)
+    api_endpoint = db.Column(db.String, unique=True, nullable=False)
+    

@@ -1,8 +1,10 @@
+import requests
 from flask import render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_user, login_required, logout_user
-from models import db, User
+from models import db, User, Wordpress_sites
 import os
 import subprocess
+import base64
 
 
 def init_routes(app, db, bcrypt):
@@ -103,5 +105,66 @@ def init_routes(app, db, bcrypt):
                     })
             except subprocess.CalledProcessError as e:
                 print(f"Error en {carpeta}: {e.stderr}")
+
+        return jsonify(plugins_data)
+    
+    @app.route('/wp/add', methods=['POST'])
+    def create_wordpress_conection():
+        data = request.get_json()
+        wp_url = data.get('wp_url')
+        username = data.get('username')
+        app_password = data.get('app_password')
+        api_endpoint = f"{wp_url}/wp-json/wp/v2/plugins"
+
+        if not wp_url and not username and not app_password:
+            return jsonify({'error': "Faltan datos en tu operación"}), 400
+
+        new_worpress = Wordpress_sites(wp_url=wp_url, username=username, app_password= app_password, api_endpoint= api_endpoint)
+        db.session.add(new_worpress)
+        db.session.commit()
+
+        return jsonify({'message': 'Wordpress registrado correctamente'}), 201
+    
+    
+    @app.route('/plugins/api', methods=['GET'])
+    def get_plugins_api():
+        # Obtener todos los sitios WordPress registrados en la BBDD
+        sites = Wordpress_sites.query.all()
+        plugins_data = []
+
+        for site in sites:
+            # Configuración para la solicitud a la API REST
+            credentials = base64.b64encode(f"{site.username}:{site.app_password}".encode()).decode("utf-8")
+            headers = {
+                "Authorization": f"Basic {credentials}",
+                "Content-Type": "application/json"
+            }
+
+            try:
+                # Hacer la solicitud GET al endpoint de plugins
+                response = requests.get(site.api_endpoint, headers=headers, timeout=10)
+                response.raise_for_status()  # Lanza excepción si hay error HTTP
+
+                # Procesar los datos de los plugins
+                plugins = response.json()
+                for plugin in plugins:
+                    name = plugin.get("plugin", "Sin nombre")  # Nota: El campo puede ser "plugin" en lugar de "name"
+                    status = plugin.get("status", "inactive")
+                    version = plugin.get("version", "Desconocida")
+                    update_version = plugin.get("update_version", version)  # Si no hay dato, usa la versión actual
+                    needs_update = update_version != version and update_version != ""  # Determina si necesita actualización
+
+                    plugins_data.append({
+                        "site": site.wp_url,
+                        "name": name,
+                        "status": status,
+                        "version": version,
+                        "latestVersion": update_version if update_version else "N/A",
+                        "needsUpdate": needs_update
+                    })
+
+            except requests.exceptions.RequestException as e:
+                print(f"Error al conectar con {site.wp_url}: {e}")
+                continue  # Continúa con el siguiente sitio si falla uno
 
         return jsonify(plugins_data)

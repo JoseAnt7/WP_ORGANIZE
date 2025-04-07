@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Plugins } from "./ListaPlugins";
+import { Plugin_List_API } from "./ListaPlugins_API";
 
 export const Dashboard = () => {
   // Estado para controlar qué sección está activa
@@ -15,7 +16,7 @@ export const Dashboard = () => {
             <p>Aquí iría tu componente o lógica para mostrar la lista de plugins.</p>
             {/* Ejemplo de placeholder */}
             <ul className="list-group">
-              <Plugins />
+              <Plugin_List_API />
             </ul>
           </div>
         );
