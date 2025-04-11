@@ -61,6 +61,25 @@ const getState = ({ getStore, getActions, setStore }) => {
           return false;
         }
       },
+      add_wp: async (wp_url, username, app_password) => {
+        try {
+          const response = await axios.post(
+            `${import.meta.env.VITE_API_URL}/wp/add`,
+            { wp_url, username, app_password },
+            {
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+          setStore({ message: response.data.message });
+          return true; // Indica éxito
+        } catch (error) {
+          const errorMessage =
+            error.response?.data?.error || "Error al conectar con el servidor";
+          setStore({ error: errorMessage });
+          console.error("Error en add_wp:", error);
+          return false; // Indica fallo
+        }
+      },
       fetchPlugins: async () => {
         try {
           const response = await axios.get(`${import.meta.env.VITE_API_URL}/plugins`, {

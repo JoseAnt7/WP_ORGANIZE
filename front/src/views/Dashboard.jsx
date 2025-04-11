@@ -1,10 +1,20 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Plugins } from "./ListaPlugins";
 import { Plugin_List_API } from "./ListaPlugins_API";
+import { useNavigate } from 'react-router-dom';
+import { useFlux } from "../context/FluxContext";
 
 export const Dashboard = () => {
   // Estado para controlar qué sección está activa
   const [activeSection, setActiveSection] = useState("plugins");
+  const navigate = useNavigate()
+  const {store, actions} = useFlux();
+
+  useEffect(() => {
+    if (!store.user){
+      navigate('/')
+    }
+  }, [])
 
   // Contenido dinámico basado en la sección activa
   const renderContent = () => {

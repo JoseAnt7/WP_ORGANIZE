@@ -111,16 +111,22 @@ def init_routes(app, db, bcrypt):
     @app.route('/wp/add', methods=['POST'])
     def create_wordpress_conection():
         data = request.get_json()
+        print("Datos recibidos:", data)  # Para depuración
         wp_url = data.get('wp_url')
         username = data.get('username')
         app_password = data.get('app_password')
         api_endpoint = f"{wp_url}/wp-json/wp/v2/plugins"
 
-        if not wp_url and not username and not app_password:
+        if not wp_url or not username or not app_password:
             return jsonify({'error': "Faltan datos en tu operación"}), 400
 
-        new_worpress = Wordpress_sites(wp_url=wp_url, username=username, app_password= app_password, api_endpoint= api_endpoint)
-        db.session.add(new_worpress)
+        new_wordpress = Wordpress_sites(
+            wp_url=wp_url,
+            username=username,
+            app_password=app_password,
+            api_endpoint=api_endpoint
+        )
+        db.session.add(new_wordpress)
         db.session.commit()
 
         return jsonify({'message': 'Wordpress registrado correctamente'}), 201

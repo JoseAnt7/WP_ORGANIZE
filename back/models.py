@@ -15,7 +15,7 @@ class User(UserMixin, db.Model):
 class Wordpress_sites(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     wp_url = db.Column(db.String, unique=True, nullable=False)
-    username = db.Column(db.String, unique=True, nullable=False)
+    username = db.Column(db.String, nullable=False)
     app_password = db.Column(db.String, unique=True, nullable=False)
     api_endpoint = db.Column(db.String, unique=True, nullable=False)
     

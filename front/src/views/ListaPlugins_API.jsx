@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useFlux } from "../context/FluxContext";
+import { Add_WP } from "../components/modal_add_wp";
 
 export const Plugin_List_API = () => {
   const { store = {}, actions } = useFlux();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    
     const loadPlugins = async () => {
       if (!store.apiPlugins?.length) {
         await actions.fetchApiPlugins();
@@ -114,12 +116,15 @@ export const Plugin_List_API = () => {
           </div>
         </div>
       </div>
-
       <div className="text-end mt-4">
-        <button className="btn btn-primary" onClick={downloadCSV}>
+        <button className="btn btn-primary m-2" onClick={downloadCSV}>
           Descargar CSV
         </button>
+        <button className="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+          Añadir Site
+        </button>
       </div>
+      <Add_WP />
     </div>
   );
 };
