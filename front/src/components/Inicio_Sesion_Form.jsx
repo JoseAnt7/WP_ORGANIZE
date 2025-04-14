@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useFlux } from "../context/FluxContext";
 import { useNavigate } from "react-router-dom";
+import logo from "../assets/img/recursos_en_la_red_logo.jpg";
 
 export const Session_Form = () => {
 
@@ -22,10 +23,10 @@ export const Session_Form = () => {
       <div className="card p-4 shadow-sm" style={{ maxWidth: "400px", width: "100%" }}>
         <div className="text-center mb-4">
           <img 
-            src="https://via.placeholder.com/150x50?text=Logo+Empresa" 
+            src={logo} 
             alt="Logo Empresa" 
             className="img-fluid" 
-            style={{ maxHeight: "50px" }}
+            style={{ maxHeight: "150px" }}
           />
         </div>
         <form onSubmit={handleSubmit}>
