@@ -9,6 +9,7 @@ export const Plugins = () => {
   const [selectedSites, setSelectedSites] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [updateFilter, setUpdateFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Cargar datos al montar el componente
   useEffect(() => {
@@ -22,7 +23,8 @@ export const Plugins = () => {
     const siteMatch = selectedSites === "all" || selectedSites.includes(plugin.site);
     const statusMatch = statusFilter === "all" || plugin.status === statusFilter;
     const updateMatch = updateFilter === "all" || (updateFilter === "needs-update" ? plugin.needsUpdate : !plugin.needsUpdate);
-    return siteMatch && statusMatch && updateMatch;
+    const searchMatch = plugin.name.toLowerCase().includes(searchTerm.toLowerCase())
+    return siteMatch && statusMatch && updateMatch && searchMatch;
   });
 
   // Generar y descargar CSV
@@ -74,7 +76,6 @@ export const Plugins = () => {
 
   return (
     <div className="container-fluid p-4">
-      {/* ... (filtros y resto del código igual) */}
   
       {/* Tabla de Plugins */}
       <div className="card shadow-sm">
