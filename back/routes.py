@@ -5,6 +5,14 @@ from models import db, User, Wordpress_sites
 import os
 import subprocess
 import base64
+import time
+from threading import Lock
+
+
+# Caché en memoria para almacenar las versiones de los plugins
+plugin_version_cache = {}
+cache_lock = Lock()
+CACHE_DURATION = 12 * 60 * 60  # 12 horas en segundos
 
 
 def init_routes(app, db, bcrypt):
@@ -134,9 +142,45 @@ def init_routes(app, db, bcrypt):
     
     @app.route('/plugins/api', methods=['GET'])
     def get_plugins_api():
-        # Obtener todos los sitios WordPress registrados en la BBDD
         sites = Wordpress_sites.query.all()
         plugins_data = []
+
+        def get_plugin_slug(plugin_name):
+            """Extrae el slug del nombre del plugin (por ejemplo, 'advanced-custom-fields' de 'advanced-custom-fields/acf')"""
+            if '/' in plugin_name:
+                return plugin_name.split('/')[0]
+            return plugin_name
+
+        def get_latest_plugin_version(slug):
+            """Consulta la API de WordPress.org para obtener la última versión del plugin"""
+            # Verificar si está en caché
+            with cache_lock:
+                if slug in plugin_version_cache:
+                    cached_data = plugin_version_cache[slug]
+                    if time.time() - cached_data['timestamp'] < CACHE_DURATION:
+                        return cached_data['version']
+            
+            # Hacer solicitud a la API de WordPress.org
+            url = f"https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&request[slugs][]={slug}"
+            try:
+                response = requests.get(url, timeout=10)
+                response.raise_for_status()
+                data = response.json()
+                
+                # La respuesta es un objeto donde el slug es la clave
+                if slug in data:
+                    latest_version = data[slug].get('version', 'N/A')
+                    # Guardar en caché
+                    with cache_lock:
+                        plugin_version_cache[slug] = {
+                            'version': latest_version,
+                            'timestamp': time.time()
+                        }
+                    return latest_version
+                return 'N/A'
+            except requests.exceptions.RequestException as e:
+                print(f"Error al consultar la API de WordPress.org para {slug}: {e}")
+                return 'N/A'
 
         for site in sites:
             # Configuración para la solicitud a la API REST
@@ -149,28 +193,35 @@ def init_routes(app, db, bcrypt):
             try:
                 # Hacer la solicitud GET al endpoint de plugins
                 response = requests.get(site.api_endpoint, headers=headers, timeout=10)
-                response.raise_for_status()  # Lanza excepción si hay error HTTP
+                response.raise_for_status()
 
                 # Procesar los datos de los plugins
                 plugins = response.json()
                 for plugin in plugins:
-                    name = plugin.get("plugin", "Sin nombre")  # Nota: El campo puede ser "plugin" en lugar de "name"
+                    name = plugin.get("plugin", "Sin nombre")
                     status = plugin.get("status", "inactive")
                     version = plugin.get("version", "Desconocida")
-                    update_version = plugin.get("update_version", version)  # Si no hay dato, usa la versión actual
-                    needs_update = update_version != version and update_version != ""  # Determina si necesita actualización
+                    slug = get_plugin_slug(name)
+                    latest_version = get_latest_plugin_version(slug)
+
+                    # Determinar si necesita actualización
+                    needs_update = (
+                        latest_version != 'N/A' and
+                        version != 'N/A' and
+                        latest_version != version
+                    )
 
                     plugins_data.append({
                         "site": site.wp_url,
                         "name": name,
                         "status": status,
                         "version": version,
-                        "latestVersion": update_version if update_version else "N/A",
+                        "latestVersion": latest_version,
                         "needsUpdate": needs_update
                     })
 
             except requests.exceptions.RequestException as e:
                 print(f"Error al conectar con {site.wp_url}: {e}")
-                continue  # Continúa con el siguiente sitio si falla uno
+                continue
 
         return jsonify(plugins_data)

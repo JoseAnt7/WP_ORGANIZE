@@ -9,6 +9,7 @@ export const Plugin_List_API = () => {
   const [selectedSites, setSelectedSites] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [updateFilter, setUpdateFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const loadPlugins = async () => {
@@ -28,7 +29,8 @@ export const Plugin_List_API = () => {
     const updateMatch =
       updateFilter === "all" ||
       (updateFilter === "needs-update" ? plugin.needsUpdate : !plugin.needsUpdate);
-    return siteMatch && statusMatch && updateMatch;
+    const searchMatch = plugin.name.toLowerCase().includes(searchTerm.toLowerCase());
+    return siteMatch && statusMatch && updateMatch && searchMatch;
   });
 
   const groupPluginsBySite = () => {
@@ -84,7 +86,7 @@ export const Plugin_List_API = () => {
       <div className="mb-4">
         <h5>Filtros</h5>
         <div className="row g-3">
-          <div className="col-md-4">
+          <div className="col-md-3">
             <label htmlFor="siteFilter" className="form-label">
               Filtrar por Sitio
             </label>
@@ -102,7 +104,7 @@ export const Plugin_List_API = () => {
               ))}
             </select>
           </div>
-          <div className="col-md-4">
+          <div className="col-md-3">
             <label htmlFor="statusFilter" className="form-label">
               Filtrar por Estado
             </label>
@@ -117,7 +119,7 @@ export const Plugin_List_API = () => {
               <option value="inactive">Inactivo</option>
             </select>
           </div>
-          <div className="col-md-4">
+          <div className="col-md-3">
             <label htmlFor="updateFilter" className="form-label">
               Filtrar por Actualización
             </label>
@@ -132,12 +134,24 @@ export const Plugin_List_API = () => {
               <option value="up-to-date">Actualizado</option>
             </select>
           </div>
+          <div className="col-md-3">
+            <label htmlFor="searchFilter" className="form-label">
+              Buscar por Nombre
+            </label>
+            <input
+              id="searchFilter"
+              type="text"
+              className="form-control"
+              placeholder="Escribe el nombre del plugin..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
       <div className="card shadow-sm">
         <div className="card-body">
-          <h5 className="card-title">Lista de Plugins (API REST)</h5>
           <div className="table-responsive">
             <table className="table table-striped table-hover">
               <thead className="table-dark">
